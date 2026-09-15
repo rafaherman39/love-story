@@ -485,11 +485,11 @@ if (replayBtn) {
          START AUTO SCROLL AGAIN
       ============================== */
 
-      setTimeout(() => {
+     setTimeout(() => {
 
-        startSlowAutoScroll();
+  startSlowAutoScroll();
 
-      }, 2500);
+}, 2200);
 
     }
   );
@@ -498,17 +498,67 @@ if (replayBtn) {
 
 
 /* =====================================================
-   AUTO SCROLL
+   AUTO SCROLL — CINEMATIC CONTINUOUS
+===================================================== */
+
+let autoScrollActive = false;
+let autoScrollFrame = null;
+let lastScrollTime = 0;
+
+
+/*
+   KECEPATAN AUTO SCROLL
+
+   18 = 18 pixel per detik
+*/
+
+const AUTO_SCROLL_SPEED = 18;
+
+
+/* =====================================================
+   SIMPAN SCROLL BEHAVIOR ASLI
+===================================================== */
+
+let originalScrollBehavior = "";
+
+
+/* =====================================================
+   START AUTO SCROLL
 ===================================================== */
 
 function startSlowAutoScroll() {
 
-  /*
-     Jangan menjalankan dua loop sekaligus.
-  */
-
   if (autoScrollActive) return;
 
+
+  /*
+     Pastikan halaman tidak terkunci
+  */
+
+  document.body.classList.remove("locked");
+
+
+  /*
+     Simpan setting scroll-behavior
+  */
+
+  originalScrollBehavior =
+    document.documentElement.style.scrollBehavior;
+
+
+  /*
+     MATIKAN SMOOTH SCROLL SEMENTARA
+
+     Ini penting supaya setiap frame
+     langsung bergerak sedikit.
+  */
+
+  document.documentElement.style.scrollBehavior = "auto";
+
+
+  /*
+     AKTIFKAN AUTO SCROLL
+  */
 
   autoScrollActive = true;
 
@@ -516,9 +566,7 @@ function startSlowAutoScroll() {
 
 
   autoScrollFrame =
-    requestAnimationFrame(
-      slowAutoScroll
-    );
+    requestAnimationFrame(slowAutoScroll);
 
 }
 
@@ -532,36 +580,68 @@ function slowAutoScroll(currentTime) {
   if (!autoScrollActive) return;
 
 
-  /* ==============================
-     HITUNG WAKTU
-  ============================== */
+  /*
+     Hitung waktu antar frame
+  */
 
   const deltaTime =
     (currentTime - lastScrollTime) / 1000;
 
+
   lastScrollTime = currentTime;
 
 
-  /* ==============================
-     SCROLL TERUS-MENERUS
-  ============================== */
+  /*
+     Posisi sekarang
+  */
 
-  window.scrollBy(
-    0,
-    AUTO_SCROLL_SPEED * deltaTime
-  );
+  const currentPosition =
+    window.scrollY;
 
 
-  /* ==============================
-     CEK POSISI BAWAH
-  ============================== */
+  /*
+     Hitung posisi berikutnya
+
+     18 px / detik
+  */
+
+  const nextPosition =
+    currentPosition +
+    (AUTO_SCROLL_SPEED * deltaTime);
+
+
+  /*
+     Gerakkan halaman langsung
+  */
+
+  window.scrollTo({
+    top: nextPosition,
+    left: 0,
+    behavior: "auto"
+  });
+
+
+  /*
+     Hitung batas paling bawah
+  */
 
   const maxScroll =
     document.documentElement.scrollHeight -
     window.innerHeight;
 
 
-  if (window.scrollY >= maxScroll - 2) {
+  /*
+     Jika sudah sampai bawah
+  */
+
+  if (nextPosition >= maxScroll) {
+
+    window.scrollTo({
+      top: maxScroll,
+      left: 0,
+      behavior: "auto"
+    });
+
 
     stopSlowAutoScroll();
 
@@ -570,9 +650,9 @@ function slowAutoScroll(currentTime) {
   }
 
 
-  /* ==============================
-     FRAME BERIKUTNYA
-  ============================== */
+  /*
+     Lanjut frame berikutnya
+  */
 
   autoScrollFrame =
     requestAnimationFrame(
@@ -590,8 +670,13 @@ function stopSlowAutoScroll() {
 
   autoScrollActive = false;
 
+
   lastScrollTime = 0;
 
+
+  /*
+     Batalkan frame
+  */
 
   if (autoScrollFrame !== null) {
 
@@ -603,16 +688,30 @@ function stopSlowAutoScroll() {
 
   }
 
+
+  /*
+     Kembalikan scroll behavior CSS
+  */
+
+  document.documentElement.style.scrollBehavior =
+    originalScrollBehavior;
+
 }
 
 
 /* =====================================================
-   USER MANUAL SCROLL
+   USER TAKE CONTROL
 ===================================================== */
 
 function userTakeControl() {
 
   if (!autoScrollActive) return;
+
+
+  /*
+     Jika user mulai scroll sendiri,
+     auto-scroll langsung berhenti.
+  */
 
   stopSlowAutoScroll();
 
@@ -664,7 +763,9 @@ window.addEventListener(
     ];
 
 
-    if (scrollKeys.includes(event.key)) {
+    if (
+      scrollKeys.includes(event.key)
+    ) {
 
       userTakeControl();
 
