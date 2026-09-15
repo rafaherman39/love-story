@@ -163,7 +163,7 @@ function startStory() {
       "opacity 1.2s ease, transform 1.2s ease";
 
     opening.style.opacity = "0";
-    opening.style.transform = "scale(1.02");
+    opening.style.transform = "scale(1.02)";
 
   }
 
