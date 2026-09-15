@@ -195,213 +195,167 @@ animatedTexts.forEach(el => {
     music.volume -= volumeStep;
   }, stepTime);
 }
+
 /* =====================================================
-   AUTO SCROLL CINEMATIC
+   AUTO SCROLL — PERLAHAN & KONTINU
    ===================================================== */
 
-const autoScrollScenes = document.querySelectorAll(
-  '#story > .story-scene'
-);
-
-let autoScrollTimer = null;
 let autoScrollActive = false;
-let userInteracting = false;
+let autoScrollFrame = null;
+let lastScrollTime = null;
 
 
 /*
-   Waktu tunggu setiap scene.
+   Kecepatan scroll dalam pixel per detik.
 
-   Scene yang teksnya sedikit dibuat lebih singkat,
-   scene yang teksnya banyak dibuat lebih lama.
+   10 = sangat pelan
+   15 = pelan
+   20 = sedang
+   30 = agak cepat
+
+   Untuk website RafaDewi:
+   12–15 paling cocok.
 */
-const sceneDurations = [
-  9000,   // Tentang Kamu
-  13000,  // Doaku Untukmu
-  16000,  // Tidak apa-apa
-  16000,  // Namamu dalam Doaku
-  14000,  // Harapan
-  12000,  // Doa Lanjutan
-  10000,  // Tentang Kita
-  11000   // Prayer / Flowers
-];
+const AUTO_SCROLL_SPEED = 13;
 
 
 /* Mulai auto-scroll */
-function startAutoScroll() {
+function startSlowAutoScroll() {
 
   if (autoScrollActive) return;
 
   autoScrollActive = true;
-  userInteracting = false;
+  lastScrollTime = null;
 
-  scheduleNextScene();
+  autoScrollFrame =
+    requestAnimationFrame(slowAutoScroll);
 }
 
 
-/* Atur scene berikutnya */
-function scheduleNextScene() {
+/* Gerakan scroll kontinu */
+function slowAutoScroll(timestamp) {
 
-  clearTimeout(autoScrollTimer);
-
-  if (!autoScrollActive) return;
-  if (userInteracting) return;
-
-  const currentScroll = window.scrollY;
-  const viewportHeight = window.innerHeight;
-
-  let currentSceneIndex = -1;
-
-  autoScrollScenes.forEach((scene, index) => {
-
-    const rect = scene.getBoundingClientRect();
-
-    if (
-      rect.top <= viewportHeight * 0.55 &&
-      rect.bottom >= viewportHeight * 0.45
-    ) {
-      currentSceneIndex = index;
-    }
-
-  });
-
-
-  /*
-     Kalau belum masuk story,
-     tunggu sampai scene pertama.
-  */
-  if (currentSceneIndex === -1) {
-
-    const firstScene = autoScrollScenes[0];
-
-    if (firstScene) {
-
-      const rect = firstScene.getBoundingClientRect();
-
-      if (rect.top > viewportHeight * 0.5) {
-
-        autoScrollTimer = setTimeout(() => {
-
-          if (!userInteracting) {
-            firstScene.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-            });
-          }
-
-        }, 5000);
-
-        return;
-      }
-    }
+  if (!autoScrollActive) {
+    cancelAnimationFrame(autoScrollFrame);
+    return;
   }
 
 
-  /*
-     Sudah sampai scene terakhir.
-     Jangan scroll ke bawah lagi.
-  */
-  if (
-    currentSceneIndex >= autoScrollScenes.length - 1
-  ) {
+  if (lastScrollTime === null) {
+    lastScrollTime = timestamp;
+  }
 
-    autoScrollActive = false;
-    clearTimeout(autoScrollTimer);
+
+  const deltaTime =
+    (timestamp - lastScrollTime) / 1000;
+
+  lastScrollTime = timestamp;
+
+
+  /*
+     Scroll perlahan berdasarkan waktu,
+     bukan berdasarkan jumlah scene.
+  */
+  window.scrollBy(
+    0,
+    AUTO_SCROLL_SPEED * deltaTime
+  );
+
+
+  /*
+     Kalau sudah sampai bagian paling bawah,
+     berhenti otomatis.
+  */
+  const atBottom =
+    window.innerHeight +
+    window.scrollY >=
+    document.documentElement.scrollHeight - 5;
+
+
+  if (atBottom) {
+
+    stopSlowAutoScroll();
 
     return;
   }
 
 
-  /*
-     Tentukan waktu tunggu
-     berdasarkan scene sekarang.
-  */
-  const duration =
-    sceneDurations[currentSceneIndex] || 12000;
+  autoScrollFrame =
+    requestAnimationFrame(slowAutoScroll);
+}
 
 
-  autoScrollTimer = setTimeout(() => {
+/* Stop auto-scroll */
+function stopSlowAutoScroll() {
 
-    if (!autoScrollActive) return;
-    if (userInteracting) return;
+  autoScrollActive = false;
+  lastScrollTime = null;
 
-    const nextIndex =
-      currentSceneIndex + 1;
-
-    const nextScene =
-      autoScrollScenes[nextIndex];
-
-    if (!nextScene) return;
-
-
-    nextScene.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-
-
-    /*
-       Beri waktu scroll selesai
-       sebelum timer scene berikutnya dimulai.
-    */
-    setTimeout(() => {
-
-      if (!userInteracting) {
-        scheduleNextScene();
-      }
-
-    }, 1800);
-
-  }, duration);
+  if (autoScrollFrame) {
+    cancelAnimationFrame(autoScrollFrame);
+    autoScrollFrame = null;
+  }
 }
 
 
 /* =====================================================
-   USER CONTROL
+   USER SCROLL MANUAL
    ===================================================== */
 
+let manualScrolling = false;
+let manualScrollTimer = null;
+
+
 /*
-   Kalau user melakukan scroll/swipe sendiri,
-   auto-scroll berhenti.
+   Ketika user mulai scroll sendiri,
+   auto-scroll langsung berhenti.
 */
-function stopAutoScrollByUser() {
+function userTakeControl() {
 
   if (!autoScrollActive) return;
 
-  userInteracting = true;
-  autoScrollActive = false;
+  manualScrolling = true;
 
-  clearTimeout(autoScrollTimer);
+  stopSlowAutoScroll();
+
+
+  clearTimeout(manualScrollTimer);
+
+  /*
+     Tidak langsung menjalankan auto-scroll lagi.
+     User benar-benar mengambil kendali.
+  */
+  manualScrollTimer =
+    setTimeout(() => {
+
+      manualScrolling = false;
+
+    }, 1000);
 }
 
 
-/*
-   Mouse wheel
-*/
+/* Mouse */
 window.addEventListener(
   'wheel',
-  stopAutoScrollByUser,
+  userTakeControl,
   { passive: true }
 );
 
 
-/*
-   Touch / swipe
-*/
+/* Touch / swipe */
 window.addEventListener(
   'touchstart',
-  stopAutoScrollByUser,
+  userTakeControl,
   { passive: true }
 );
 
 
-/*
-   Keyboard
-*/
+/* Keyboard */
 window.addEventListener(
   'keydown',
   (event) => {
 
-    const keys = [
+    const scrollKeys = [
       'ArrowUp',
       'ArrowDown',
       'PageUp',
@@ -411,8 +365,8 @@ window.addEventListener(
       ' '
     ];
 
-    if (keys.includes(event.key)) {
-      stopAutoScrollByUser();
+    if (scrollKeys.includes(event.key)) {
+      userTakeControl();
     }
 
   }
@@ -420,32 +374,31 @@ window.addEventListener(
 
 
 /* =====================================================
-   AKTIFKAN SETELAH TOMBOL "BUKA"
+   MULAI SETELAH "BUKA ♡"
    ===================================================== */
 
-const originalStartBtn =
+const startButton =
   document.getElementById('startBtn');
 
 
-if (originalStartBtn) {
+if (startButton) {
 
-  originalStartBtn.addEventListener(
+  startButton.addEventListener(
     'click',
     () => {
 
       /*
-         Jangan langsung scroll.
-         Beri kesempatan opening
-         menikmati animasinya terlebih dahulu.
+         Opening diberi waktu untuk tampil
+         sebelum halaman mulai bergerak.
       */
 
       setTimeout(() => {
 
-        if (!userInteracting) {
-          startAutoScroll();
+        if (!manualScrolling) {
+          startSlowAutoScroll();
         }
 
-      }, 4500);
+      }, 5000);
 
     }
   );
@@ -467,10 +420,9 @@ if (replayButton) {
     'click',
     () => {
 
-      clearTimeout(autoScrollTimer);
+      stopSlowAutoScroll();
 
-      autoScrollActive = false;
-      userInteracting = false;
+      manualScrolling = false;
 
 
       window.scrollTo({
@@ -481,11 +433,11 @@ if (replayButton) {
 
       /*
          Setelah kembali ke opening,
-         mulai lagi otomatis.
+         tunggu sebentar lalu mulai lagi.
       */
       setTimeout(() => {
 
-        startAutoScroll();
+        startSlowAutoScroll();
 
       }, 5000);
 
