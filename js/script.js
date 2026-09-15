@@ -171,7 +171,27 @@ function fadeMusicOut() {
       clearInterval(musicFadeTimer);
       return;
     }
+// =====================================================
+// TEXT REVEAL ANIMATION
+// =====================================================
 
+const animatedTexts = document.querySelectorAll(
+  '.text-animate, .text-title-animate, .text-stagger, .button-animate'
+);
+
+const textObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('show');
+    }
+  });
+}, {
+  threshold: 0.35
+});
+
+animatedTexts.forEach(el => {
+  textObserver.observe(el);
+});
     music.volume -= volumeStep;
   }, stepTime);
 }
