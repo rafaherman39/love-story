@@ -41,7 +41,7 @@ let autoScrollActive = false;
 let autoScrollFrame = null;
 let lastScrollTime = 0;
 
-const AUTO_SCROLL_SPEED = 18;
+const AUTO_SCROLL_SPEED = 10;
 
 
 /* =====================================================
