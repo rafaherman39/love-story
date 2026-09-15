@@ -195,3 +195,301 @@ animatedTexts.forEach(el => {
     music.volume -= volumeStep;
   }, stepTime);
 }
+/* =====================================================
+   AUTO SCROLL CINEMATIC
+   ===================================================== */
+
+const autoScrollScenes = document.querySelectorAll(
+  '#story > .story-scene'
+);
+
+let autoScrollTimer = null;
+let autoScrollActive = false;
+let userInteracting = false;
+
+
+/*
+   Waktu tunggu setiap scene.
+
+   Scene yang teksnya sedikit dibuat lebih singkat,
+   scene yang teksnya banyak dibuat lebih lama.
+*/
+const sceneDurations = [
+  9000,   // Tentang Kamu
+  13000,  // Doaku Untukmu
+  16000,  // Tidak apa-apa
+  16000,  // Namamu dalam Doaku
+  14000,  // Harapan
+  12000,  // Doa Lanjutan
+  10000,  // Tentang Kita
+  11000   // Prayer / Flowers
+];
+
+
+/* Mulai auto-scroll */
+function startAutoScroll() {
+
+  if (autoScrollActive) return;
+
+  autoScrollActive = true;
+  userInteracting = false;
+
+  scheduleNextScene();
+}
+
+
+/* Atur scene berikutnya */
+function scheduleNextScene() {
+
+  clearTimeout(autoScrollTimer);
+
+  if (!autoScrollActive) return;
+  if (userInteracting) return;
+
+  const currentScroll = window.scrollY;
+  const viewportHeight = window.innerHeight;
+
+  let currentSceneIndex = -1;
+
+  autoScrollScenes.forEach((scene, index) => {
+
+    const rect = scene.getBoundingClientRect();
+
+    if (
+      rect.top <= viewportHeight * 0.55 &&
+      rect.bottom >= viewportHeight * 0.45
+    ) {
+      currentSceneIndex = index;
+    }
+
+  });
+
+
+  /*
+     Kalau belum masuk story,
+     tunggu sampai scene pertama.
+  */
+  if (currentSceneIndex === -1) {
+
+    const firstScene = autoScrollScenes[0];
+
+    if (firstScene) {
+
+      const rect = firstScene.getBoundingClientRect();
+
+      if (rect.top > viewportHeight * 0.5) {
+
+        autoScrollTimer = setTimeout(() => {
+
+          if (!userInteracting) {
+            firstScene.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+
+        }, 5000);
+
+        return;
+      }
+    }
+  }
+
+
+  /*
+     Sudah sampai scene terakhir.
+     Jangan scroll ke bawah lagi.
+  */
+  if (
+    currentSceneIndex >= autoScrollScenes.length - 1
+  ) {
+
+    autoScrollActive = false;
+    clearTimeout(autoScrollTimer);
+
+    return;
+  }
+
+
+  /*
+     Tentukan waktu tunggu
+     berdasarkan scene sekarang.
+  */
+  const duration =
+    sceneDurations[currentSceneIndex] || 12000;
+
+
+  autoScrollTimer = setTimeout(() => {
+
+    if (!autoScrollActive) return;
+    if (userInteracting) return;
+
+    const nextIndex =
+      currentSceneIndex + 1;
+
+    const nextScene =
+      autoScrollScenes[nextIndex];
+
+    if (!nextScene) return;
+
+
+    nextScene.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+
+
+    /*
+       Beri waktu scroll selesai
+       sebelum timer scene berikutnya dimulai.
+    */
+    setTimeout(() => {
+
+      if (!userInteracting) {
+        scheduleNextScene();
+      }
+
+    }, 1800);
+
+  }, duration);
+}
+
+
+/* =====================================================
+   USER CONTROL
+   ===================================================== */
+
+/*
+   Kalau user melakukan scroll/swipe sendiri,
+   auto-scroll berhenti.
+*/
+function stopAutoScrollByUser() {
+
+  if (!autoScrollActive) return;
+
+  userInteracting = true;
+  autoScrollActive = false;
+
+  clearTimeout(autoScrollTimer);
+}
+
+
+/*
+   Mouse wheel
+*/
+window.addEventListener(
+  'wheel',
+  stopAutoScrollByUser,
+  { passive: true }
+);
+
+
+/*
+   Touch / swipe
+*/
+window.addEventListener(
+  'touchstart',
+  stopAutoScrollByUser,
+  { passive: true }
+);
+
+
+/*
+   Keyboard
+*/
+window.addEventListener(
+  'keydown',
+  (event) => {
+
+    const keys = [
+      'ArrowUp',
+      'ArrowDown',
+      'PageUp',
+      'PageDown',
+      'Home',
+      'End',
+      ' '
+    ];
+
+    if (keys.includes(event.key)) {
+      stopAutoScrollByUser();
+    }
+
+  }
+);
+
+
+/* =====================================================
+   AKTIFKAN SETELAH TOMBOL "BUKA"
+   ===================================================== */
+
+const originalStartBtn =
+  document.getElementById('startBtn');
+
+
+if (originalStartBtn) {
+
+  originalStartBtn.addEventListener(
+    'click',
+    () => {
+
+      /*
+         Jangan langsung scroll.
+         Beri kesempatan opening
+         menikmati animasinya terlebih dahulu.
+      */
+
+      setTimeout(() => {
+
+        if (!userInteracting) {
+          startAutoScroll();
+        }
+
+      }, 4500);
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   REPLAY
+   ===================================================== */
+
+const replayButton =
+  document.getElementById('replayBtn');
+
+
+if (replayButton) {
+
+  replayButton.addEventListener(
+    'click',
+    () => {
+
+      clearTimeout(autoScrollTimer);
+
+      autoScrollActive = false;
+      userInteracting = false;
+
+
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+
+
+      /*
+         Setelah kembali ke opening,
+         mulai lagi otomatis.
+      */
+      setTimeout(() => {
+
+        startAutoScroll();
+
+      }, 5000);
+
+    }
+  );
+
+}
