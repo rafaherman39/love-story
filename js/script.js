@@ -1,135 +1,79 @@
+/* =====================================================
+   ELEMENT
+===================================================== */
+
 const preloader = document.getElementById("preloader");
 const startBtn = document.getElementById("startBtn");
 const replayBtn = document.getElementById("replayBtn");
 const opening = document.getElementById("opening");
 const story = document.getElementById("story");
+
 const music = document.getElementById("bgMusic");
 const musicPlayer = document.getElementById("musicPlayer");
 const musicToggle = document.getElementById("musicToggle");
 
+
+/* =====================================================
+   INITIAL STATE
+===================================================== */
+
 document.body.classList.add("locked");
 
-window.addEventListener("load", () => {
-  setTimeout(() => {
-    preloader.classList.add("hidden");
-    document.querySelectorAll("#opening .reveal").forEach(el => {
-      el.classList.add("visible");
-    });
-  }, 650);
-});
 
-function startStory() {
-  document.body.classList.remove("locked");
-
-  opening.style.transition =
-    "opacity 1.2s ease, transform 1.2s ease";
-
-  opening.style.opacity = "0";
-  opening.style.transform = "scale(1.02)";
-
-  setTimeout(() => {
-    story.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }, 450);
-
-  /* MUSIC */
-  if (music) {
-    musicPlayer.classList.add("show");
-
-    music.currentTime = 0;
-
-    music.play()
-      .then(() => {
-        fadeMusicIn();
-
-        musicPlayer.classList.add("playing");
-      })
-      .catch(() => {
-        console.log("Browser menunggu interaksi pengguna untuk memutar musik.");
-      });
-  }
-}
-
-musicToggle.addEventListener("click", () => {
-
-  if (!music) return;
-
-  if (music.paused) {
-
-    music.play()
-      .then(() => {
-        music.volume = 0.23;
-
-        musicPlayer.classList.add("playing");
-      })
-      .catch(() => {});
-
-  } else {
-
-    music.pause();
-
-    musicPlayer.classList.remove("playing");
-  }
-
-});
-
-startBtn.addEventListener("click", startStory);
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("active");
-      entry.target.querySelectorAll(".reveal").forEach(el => {
-        el.classList.add("visible");
-      });
-    }
-  });
-}, { threshold: 0.34 });
-
-document.querySelectorAll(".story-scene").forEach(scene => observer.observe(scene));
-
-replayBtn.addEventListener("click", () => {
-
-  if (music) {
-    clearInterval(musicFadeTimer);
-
-    music.pause();
-    music.currentTime = 0;
-    music.volume = 0;
-
-    musicPlayer.classList.remove("playing");
-  }
-
-  opening.style.opacity = "1";
-  opening.style.transform = "scale(1)";
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-  document.querySelectorAll(".reveal")
-    .forEach(el => el.classList.remove("visible"));
-
-  musicPlayer.classList.remove("show");
-
-  setTimeout(() => {
-
-    document.querySelectorAll("#opening .reveal")
-      .forEach(el => el.classList.add("visible"));
-
-  }, 700);
-});
-
-/* ==============================
-   MUSIC CONTROL
-============================== */
+/* =====================================================
+   MUSIC TIMER
+===================================================== */
 
 let musicFadeTimer = null;
 
+
+/* =====================================================
+   AUTO SCROLL VARIABLES
+===================================================== */
+
+let autoScrollActive = false;
+let autoScrollFrame = null;
+let lastScrollTime = 0;
+
+
+/*
+   KECEPATAN AUTO SCROLL
+
+   18 pixel per detik
+*/
+
+const AUTO_SCROLL_SPEED = 18;
+
+
+/* =====================================================
+   PRELOADER
+===================================================== */
+
+window.addEventListener("load", () => {
+
+  setTimeout(() => {
+
+    if (preloader) {
+      preloader.classList.add("hidden");
+    }
+
+    document
+      .querySelectorAll("#opening .reveal")
+      .forEach(el => {
+        el.classList.add("visible");
+      });
+
+  }, 650);
+
+});
+
+
+/* =====================================================
+   MUSIC FADE IN
+===================================================== */
+
 function fadeMusicIn() {
+
   if (!music) return;
 
   clearInterval(musicFadeTimer);
@@ -142,18 +86,31 @@ function fadeMusicIn() {
   const stepTime = duration / steps;
   const volumeStep = targetVolume / steps;
 
+
   musicFadeTimer = setInterval(() => {
+
     if (music.volume + volumeStep >= targetVolume) {
+
       music.volume = targetVolume;
+
       clearInterval(musicFadeTimer);
+
       return;
     }
 
     music.volume += volumeStep;
+
   }, stepTime);
+
 }
 
+
+/* =====================================================
+   MUSIC FADE OUT
+===================================================== */
+
 function fadeMusicOut() {
+
   if (!music) return;
 
   clearInterval(musicFadeTimer);
@@ -163,6 +120,7 @@ function fadeMusicOut() {
   const stepTime = 600 / steps;
   const volumeStep = startVolume / steps;
 
+
   musicFadeTimer = setInterval(() => {
 
     if (music.volume - volumeStep <= 0) {
@@ -171,200 +129,525 @@ function fadeMusicOut() {
       music.pause();
 
       clearInterval(musicFadeTimer);
+
       return;
     }
 
     music.volume -= volumeStep;
 
   }, stepTime);
+
 }
+
+
+/* =====================================================
+   START STORY
+===================================================== */
+
+function startStory() {
+
+  /* ==============================
+     UNLOCK PAGE
+  ============================== */
+
+  document.body.classList.remove("locked");
+
+
+  /* ==============================
+     FADE OPENING
+  ============================== */
+
+  if (opening) {
+
+    opening.style.transition =
+      "opacity 1.2s ease, transform 1.2s ease";
+
+    opening.style.opacity = "0";
+    opening.style.transform = "scale(1.02");
+
+  }
+
+
+  /* ==============================
+     PINDAH KE STORY
+  ============================== */
+
+  setTimeout(() => {
+
+    if (story) {
+
+      window.scrollTo({
+        top: story.offsetTop,
+        left: 0,
+        behavior: "smooth"
+      });
+
+    }
+
+  }, 450);
+
+
+  /* ==============================
+     MUSIC
+  ============================== */
+
+  if (music) {
+
+    if (musicPlayer) {
+      musicPlayer.classList.add("show");
+    }
+
+    music.currentTime = 0;
+
+    music.play()
+      .then(() => {
+
+        fadeMusicIn();
+
+        if (musicPlayer) {
+          musicPlayer.classList.add("playing");
+        }
+
+      })
+      .catch(() => {
+
+        console.log(
+          "Browser menunggu interaksi pengguna untuk memutar musik."
+        );
+
+      });
+
+  }
+
+
+  /* ==============================
+     START AUTO SCROLL
+  ============================== */
+
+  setTimeout(() => {
+
+    startSlowAutoScroll();
+
+  }, 2500);
+
+}
+
+
+/* =====================================================
+   START BUTTON
+===================================================== */
+
+if (startBtn) {
+
+  startBtn.addEventListener(
+    "click",
+    startStory
+  );
+
+}
+
+
+/* =====================================================
+   MUSIC TOGGLE
+===================================================== */
+
+if (musicToggle) {
+
+  musicToggle.addEventListener(
+    "click",
+    () => {
+
+      if (!music) return;
+
+
+      /* ==============================
+         PLAY
+      ============================== */
+
+      if (music.paused) {
+
+        music.play()
+          .then(() => {
+
+            music.volume = 0.23;
+
+            if (musicPlayer) {
+              musicPlayer.classList.add("playing");
+            }
+
+          })
+          .catch(() => {});
+
+      }
+
+
+      /* ==============================
+         PAUSE
+      ============================== */
+
+      else {
+
+        music.pause();
+
+        if (musicPlayer) {
+          musicPlayer.classList.remove("playing");
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   STORY INTERSECTION OBSERVER
+===================================================== */
+
+const observer =
+  new IntersectionObserver(
+    (entries) => {
+
+      entries.forEach(entry => {
+
+        if (entry.isIntersecting) {
+
+          entry.target.classList.add("active");
+
+          entry.target
+            .querySelectorAll(".reveal")
+            .forEach(el => {
+
+              el.classList.add("visible");
+
+            });
+
+        }
+
+      });
+
+    },
+    {
+      threshold: 0.34
+    }
+  );
+
+
+document
+  .querySelectorAll(".story-scene")
+  .forEach(scene => {
+
+    observer.observe(scene);
+
+  });
 
 
 /* =====================================================
    TEXT REVEAL ANIMATION
-   ===================================================== */
+===================================================== */
 
-const animatedTexts = document.querySelectorAll(
-  '.text-animate, .text-title-animate, .text-stagger, .button-animate'
-);
+const animatedTexts =
+  document.querySelectorAll(
+    ".text-animate, .text-title-animate, .text-stagger, .button-animate"
+  );
 
-const textObserver = new IntersectionObserver((entries) => {
 
-  entries.forEach(entry => {
+if (animatedTexts.length > 0) {
 
-    if (entry.isIntersecting) {
-      entry.target.classList.add('show');
-    }
+  const textObserver =
+    new IntersectionObserver(
+      (entries) => {
+
+        entries.forEach(entry => {
+
+          if (entry.isIntersecting) {
+
+            entry.target.classList.add("show");
+
+          }
+
+        });
+
+      },
+      {
+        threshold: 0.35
+      }
+    );
+
+
+  animatedTexts.forEach(el => {
+
+    textObserver.observe(el);
 
   });
 
-}, {
-  threshold: 0.35
-});
-
-
-animatedTexts.forEach(el => {
-  textObserver.observe(el);
-});
-
-
-/* =====================================================
-   AUTO SCROLL — PERLAHAN & KONTINU
-   ===================================================== */
-
-let autoScrollActive = false;
-let autoScrollFrame = null;
-let lastScrollTime = null;
-
-
-/*
-   KECEPATAN AUTO SCROLL
-
-   18 = kecepatan yang kamu bilang sudah mau/jalan
-*/
-const AUTO_SCROLL_SPEED = 13;
-
-
-/* =====================================================
-   MULAI AUTO SCROLL
-   ===================================================== */
-
-function startSlowAutoScroll() {
-
-  if (autoScrollActive) return;
-
-  autoScrollActive = true;
-  lastScrollTime = null;
-
-  autoScrollFrame =
-    requestAnimationFrame(slowAutoScroll);
 }
 
 
 /* =====================================================
-   AUTO SCROLL CONTINUOUS
-   ===================================================== */
+   REPLAY
+===================================================== */
 
-function slowAutoScroll(timestamp) {
+if (replayBtn) {
 
-  if (!autoScrollActive) {
-    return;
-  }
+  replayBtn.addEventListener(
+    "click",
+    () => {
 
 
-  if (lastScrollTime === null) {
-    lastScrollTime = timestamp;
-  }
+      /* ==============================
+         STOP AUTO SCROLL
+      ============================== */
 
+      stopSlowAutoScroll();
+
+
+      /* ==============================
+         STOP MUSIC
+      ============================== */
+
+      if (music) {
+
+        clearInterval(musicFadeTimer);
+
+        music.pause();
+
+        music.currentTime = 0;
+
+        music.volume = 0;
+
+      }
+
+
+      if (musicPlayer) {
+
+        musicPlayer.classList.remove("playing");
+        musicPlayer.classList.remove("show");
+
+      }
+
+
+      /* ==============================
+         RESTORE OPENING
+      ============================== */
+
+      if (opening) {
+
+        opening.style.opacity = "1";
+        opening.style.transform = "scale(1)";
+
+      }
+
+
+      /* ==============================
+         REMOVE ALL REVEALS
+      ============================== */
+
+      document
+        .querySelectorAll(".reveal")
+        .forEach(el => {
+
+          el.classList.remove("visible");
+
+        });
+
+
+      /* ==============================
+         RETURN TO TOP
+      ============================== */
+
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "smooth"
+      });
+
+
+      /* ==============================
+         SHOW OPENING TEXT
+      ============================== */
+
+      setTimeout(() => {
+
+        document
+          .querySelectorAll("#opening .reveal")
+          .forEach(el => {
+
+            el.classList.add("visible");
+
+          });
+
+      }, 700);
+
+
+      /* ==============================
+         START AUTO SCROLL AGAIN
+      ============================== */
+
+      setTimeout(() => {
+
+        startSlowAutoScroll();
+
+      }, 2500);
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   AUTO SCROLL
+===================================================== */
+
+function startSlowAutoScroll() {
+
+  /*
+     Jangan menjalankan dua loop sekaligus.
+  */
+
+  if (autoScrollActive) return;
+
+
+  autoScrollActive = true;
+
+  lastScrollTime = performance.now();
+
+
+  autoScrollFrame =
+    requestAnimationFrame(
+      slowAutoScroll
+    );
+
+}
+
+
+/* =====================================================
+   AUTO SCROLL LOOP
+===================================================== */
+
+function slowAutoScroll(currentTime) {
+
+  if (!autoScrollActive) return;
+
+
+  /* ==============================
+     HITUNG WAKTU
+  ============================== */
 
   const deltaTime =
-    (timestamp - lastScrollTime) / 1000;
+    (currentTime - lastScrollTime) / 1000;
 
-  lastScrollTime = timestamp;
-
-
-  /*
-     Scroll perlahan ke bawah.
-     Tidak lompat antar scene.
-  */
-  window.scrollBy({
-    top: AUTO_SCROLL_SPEED * deltaTime,
-    left: 0,
-    behavior: "auto"
-  });
+  lastScrollTime = currentTime;
 
 
-  /*
-     Cek apakah sudah sampai paling bawah.
-  */
-  const atBottom =
-    window.innerHeight +
-    window.scrollY >=
-    document.documentElement.scrollHeight - 5;
+  /* ==============================
+     SCROLL TERUS-MENERUS
+  ============================== */
+
+  window.scrollBy(
+    0,
+    AUTO_SCROLL_SPEED * deltaTime
+  );
 
 
-  if (atBottom) {
+  /* ==============================
+     CEK POSISI BAWAH
+  ============================== */
+
+  const maxScroll =
+    document.documentElement.scrollHeight -
+    window.innerHeight;
+
+
+  if (window.scrollY >= maxScroll - 2) {
 
     stopSlowAutoScroll();
 
     return;
+
   }
 
 
+  /* ==============================
+     FRAME BERIKUTNYA
+  ============================== */
+
   autoScrollFrame =
-    requestAnimationFrame(slowAutoScroll);
+    requestAnimationFrame(
+      slowAutoScroll
+    );
+
 }
 
 
 /* =====================================================
    STOP AUTO SCROLL
-   ===================================================== */
+===================================================== */
 
 function stopSlowAutoScroll() {
 
   autoScrollActive = false;
-  lastScrollTime = null;
 
-  if (autoScrollFrame) {
+  lastScrollTime = 0;
 
-    cancelAnimationFrame(autoScrollFrame);
+
+  if (autoScrollFrame !== null) {
+
+    cancelAnimationFrame(
+      autoScrollFrame
+    );
 
     autoScrollFrame = null;
+
   }
+
 }
 
 
 /* =====================================================
-   USER SCROLL MANUAL
-   ===================================================== */
-
-let manualScrolling = false;
-let manualScrollTimer = null;
-
+   USER MANUAL SCROLL
+===================================================== */
 
 function userTakeControl() {
 
   if (!autoScrollActive) return;
 
-  manualScrolling = true;
-
   stopSlowAutoScroll();
 
-  clearTimeout(manualScrollTimer);
-
-  manualScrollTimer = setTimeout(() => {
-
-    manualScrolling = false;
-
-  }, 1000);
 }
 
 
 /* =====================================================
    MOUSE WHEEL
-   ===================================================== */
+===================================================== */
 
 window.addEventListener(
   "wheel",
   userTakeControl,
-  { passive: true }
+  {
+    passive: true
+  }
 );
 
 
 /* =====================================================
    TOUCH / SWIPE
-   ===================================================== */
+===================================================== */
 
 window.addEventListener(
-  "touchstart",
+  "touchmove",
   userTakeControl,
-  { passive: true }
+  {
+    passive: true
+  }
 );
 
 
 /* =====================================================
    KEYBOARD
-   ===================================================== */
+===================================================== */
 
 window.addEventListener(
   "keydown",
@@ -380,6 +663,7 @@ window.addEventListener(
       " "
     ];
 
+
     if (scrollKeys.includes(event.key)) {
 
       userTakeControl();
@@ -388,78 +672,3 @@ window.addEventListener(
 
   }
 );
-
-
-/* =====================================================
-   MULAI AUTO SCROLL SETELAH BUKA
-   ===================================================== */
-
-const startButton =
-  document.getElementById("startBtn");
-
-
-if (startButton) {
-
-  startButton.addEventListener(
-    "click",
-    () => {
-
-      /*
-         Tunggu sebentar setelah opening
-         sebelum mulai bergerak.
-      */
-
-      setTimeout(() => {
-
-        if (!manualScrolling) {
-          startSlowAutoScroll();
-        }
-
-      }, 5000);
-
-    }
-  );
-
-}
-
-
-/* =====================================================
-   REPLAY
-   ===================================================== */
-
-const replayButton =
-  document.getElementById("replayBtn");
-
-
-if (replayButton) {
-
-  replayButton.addEventListener(
-    "click",
-    () => {
-
-      stopSlowAutoScroll();
-
-      manualScrolling = false;
-
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
-
-      /*
-         Tunggu sampai kembali ke opening,
-         kemudian mulai auto-scroll lagi.
-      */
-
-      setTimeout(() => {
-
-        startSlowAutoScroll();
-
-      }, 5000);
-
-    }
-  );
-
-}
