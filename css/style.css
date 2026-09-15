@@ -662,26 +662,6 @@ button {
     font-size: 19px;
   }
 }
-/* =====================================================
-   SLOW CINEMATIC TEXT REVEAL
-   ===================================================== */
-
-.reveal {
-  opacity: 0;
-  transform: translateY(25px);
-
-  transition:
-    opacity 1.8s ease,
-    transform 1.8s cubic-bezier(.22, 1, .36, 1);
-
-  will-change: opacity, transform;
-}
-
-.reveal.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 
 /* =====================================================
    STAGGER / JARAK KEMUNCULAN
