@@ -662,84 +662,56 @@ button {
     font-size: 19px;
   }
 }
-/* =====================================================
-   TEXT REVEAL ANIMATION
-   ===================================================== */
-
-.text-animate {
+.reveal {
   opacity: 0;
-  transform: translateY(24px);
-  filter: blur(5px);
+  transform: translateY(28px);
+  filter: blur(6px);
+
   transition:
-    opacity 1.1s ease,
-    transform 1.1s cubic-bezier(.22, 1, .36, 1),
-    filter 1.1s ease;
+    opacity 1.6s ease,
+    transform 1.6s cubic-bezier(.22, 1, .36, 1),
+    filter 1.6s ease;
+
+  will-change: opacity, transform, filter;
 }
 
-.text-animate.show {
+.reveal.show {
   opacity: 1;
   transform: translateY(0);
   filter: blur(0);
 }
 
 
-/* Judul sedikit lebih dramatis */
-.text-title-animate {
-  opacity: 0;
-  transform: translateY(30px) scale(.97);
-  filter: blur(7px);
-  transition:
-    opacity 1.3s ease,
-    transform 1.3s cubic-bezier(.22, 1, .36, 1),
-    filter 1.3s ease;
+/* Cinematic stagger */
+
+.delay-1 {
+  transition-delay: .8s;
 }
 
-.text-title-animate.show {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
+.delay-2 {
+  transition-delay: 1.8s;
 }
 
-
-/* Stagger untuk baris-baris teks */
-.text-stagger {
-  opacity: 0;
-  transform: translateY(18px);
-  filter: blur(4px);
-  transition:
-    opacity .9s ease,
-    transform .9s cubic-bezier(.22, 1, .36, 1),
-    filter .9s ease;
+.delay-3 {
+  transition-delay: 2.8s;
 }
 
-.text-stagger.show {
-  opacity: 1;
-  transform: translateY(0);
-  filter: blur(0);
+.delay-4 {
+  transition-delay: 3.8s;
 }
 
-
-/* Tombol */
-.button-animate {
-  opacity: 0;
-  transform: translateY(20px);
-  transition:
-    opacity 1s ease,
-    transform 1s cubic-bezier(.22, 1, .36, 1);
+.delay-5 {
+  transition-delay: 4.8s;
 }
 
-.button-animate.show {
-  opacity: 1;
-  transform: translateY(0);
+.delay-6 {
+  transition-delay: 5.8s;
 }
 
+.delay-7 {
+  transition-delay: 6.8s;
+}
 
-/* Delay */
-.delay-1 { transition-delay: .15s; }
-.delay-2 { transition-delay: .35s; }
-.delay-3 { transition-delay: .55s; }
-.delay-4 { transition-delay: .75s; }
-.delay-5 { transition-delay: .95s; }
-.delay-6 { transition-delay: 1.15s; }
-.delay-7 { transition-delay: 1.35s; }
-.delay-8 { transition-delay: 1.55s; }
+.delay-8 {
+  transition-delay: 7.8s;
+}
