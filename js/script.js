@@ -463,5 +463,3 @@ if (replayButton) {
   );
 
 }
-
-}
