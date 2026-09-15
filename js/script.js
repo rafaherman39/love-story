@@ -41,7 +41,7 @@ let autoScrollActive = false;
 let autoScrollFrame = null;
 let lastScrollTime = 0;
 
-const AUTO_SCROLL_SPEED = 8;
+const AUTO_SCROLL_SPEED = 6;
 
 
 /* =====================================================
@@ -244,7 +244,7 @@ function startStory() {
 
         startSlowAutoScroll();
 
-    }, 2500);
+    }, 8000);
 
 }
 
