@@ -216,7 +216,7 @@ let lastScrollTime = null;
    Untuk website RafaDewi:
    12–15 paling cocok.
 */
-const AUTO_SCROLL_SPEED = 12;
+const AUTO_SCROLL_SPEED = 13;
 
 
 /* Mulai auto-scroll */
