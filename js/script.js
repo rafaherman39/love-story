@@ -222,7 +222,7 @@ let lastScrollTime = null;
 
    18 = kecepatan yang kamu bilang sudah mau/jalan
 */
-const AUTO_SCROLL_SPEED = 11;
+const AUTO_SCROLL_SPEED = 13;
 
 
 /* =====================================================
