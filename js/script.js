@@ -164,37 +164,49 @@ function fadeMusicOut() {
   const volumeStep = startVolume / steps;
 
   musicFadeTimer = setInterval(() => {
+
     if (music.volume - volumeStep <= 0) {
+
       music.volume = 0;
       music.pause();
 
       clearInterval(musicFadeTimer);
       return;
     }
-// =====================================================
-// TEXT REVEAL ANIMATION
-// =====================================================
+
+    music.volume -= volumeStep;
+
+  }, stepTime);
+}
+
+
+/* =====================================================
+   TEXT REVEAL ANIMATION
+   ===================================================== */
 
 const animatedTexts = document.querySelectorAll(
   '.text-animate, .text-title-animate, .text-stagger, .button-animate'
 );
 
 const textObserver = new IntersectionObserver((entries) => {
+
   entries.forEach(entry => {
+
     if (entry.isIntersecting) {
       entry.target.classList.add('show');
     }
+
   });
+
 }, {
   threshold: 0.35
 });
 
+
 animatedTexts.forEach(el => {
   textObserver.observe(el);
 });
-    music.volume -= volumeStep;
-  }, stepTime);
-}
+
 
 /* =====================================================
    AUTO SCROLL — PERLAHAN & KONTINU
@@ -206,20 +218,17 @@ let lastScrollTime = null;
 
 
 /*
-   Kecepatan scroll dalam pixel per detik.
+   KECEPATAN AUTO SCROLL
 
-   10 = sangat pelan
-   15 = pelan
-   20 = sedang
-   30 = agak cepat
-
-   Untuk website RafaDewi:
-   12–15 paling cocok.
+   18 = kecepatan yang kamu bilang sudah mau/jalan
 */
-const AUTO_SCROLL_SPEED = 14;
+const AUTO_SCROLL_SPEED = 11;
 
 
-/* Mulai auto-scroll */
+/* =====================================================
+   MULAI AUTO SCROLL
+   ===================================================== */
+
 function startSlowAutoScroll() {
 
   if (autoScrollActive) return;
@@ -232,11 +241,13 @@ function startSlowAutoScroll() {
 }
 
 
-/* Gerakan scroll kontinu */
+/* =====================================================
+   AUTO SCROLL CONTINUOUS
+   ===================================================== */
+
 function slowAutoScroll(timestamp) {
 
   if (!autoScrollActive) {
-    cancelAnimationFrame(autoScrollFrame);
     return;
   }
 
@@ -253,18 +264,18 @@ function slowAutoScroll(timestamp) {
 
 
   /*
-     Scroll perlahan berdasarkan waktu,
-     bukan berdasarkan jumlah scene.
+     Scroll perlahan ke bawah.
+     Tidak lompat antar scene.
   */
-  window.scrollBy(
-    0,
-    AUTO_SCROLL_SPEED * deltaTime
-  );
+  window.scrollBy({
+    top: AUTO_SCROLL_SPEED * deltaTime,
+    left: 0,
+    behavior: "auto"
+  });
 
 
   /*
-     Kalau sudah sampai bagian paling bawah,
-     berhenti otomatis.
+     Cek apakah sudah sampai paling bawah.
   */
   const atBottom =
     window.innerHeight +
@@ -285,14 +296,19 @@ function slowAutoScroll(timestamp) {
 }
 
 
-/* Stop auto-scroll */
+/* =====================================================
+   STOP AUTO SCROLL
+   ===================================================== */
+
 function stopSlowAutoScroll() {
 
   autoScrollActive = false;
   lastScrollTime = null;
 
   if (autoScrollFrame) {
+
     cancelAnimationFrame(autoScrollFrame);
+
     autoScrollFrame = null;
   }
 }
@@ -306,10 +322,6 @@ let manualScrolling = false;
 let manualScrollTimer = null;
 
 
-/*
-   Ketika user mulai scroll sendiri,
-   auto-scroll langsung berhenti.
-*/
 function userTakeControl() {
 
   if (!autoScrollActive) return;
@@ -318,55 +330,60 @@ function userTakeControl() {
 
   stopSlowAutoScroll();
 
-
   clearTimeout(manualScrollTimer);
 
-  /*
-     Tidak langsung menjalankan auto-scroll lagi.
-     User benar-benar mengambil kendali.
-  */
-  manualScrollTimer =
-    setTimeout(() => {
+  manualScrollTimer = setTimeout(() => {
 
-      manualScrolling = false;
+    manualScrolling = false;
 
-    }, 1000);
+  }, 1000);
 }
 
 
-/* Mouse */
+/* =====================================================
+   MOUSE WHEEL
+   ===================================================== */
+
 window.addEventListener(
-  'wheel',
+  "wheel",
   userTakeControl,
   { passive: true }
 );
 
 
-/* Touch / swipe */
+/* =====================================================
+   TOUCH / SWIPE
+   ===================================================== */
+
 window.addEventListener(
-  'touchstart',
+  "touchstart",
   userTakeControl,
   { passive: true }
 );
 
 
-/* Keyboard */
+/* =====================================================
+   KEYBOARD
+   ===================================================== */
+
 window.addEventListener(
-  'keydown',
+  "keydown",
   (event) => {
 
     const scrollKeys = [
-      'ArrowUp',
-      'ArrowDown',
-      'PageUp',
-      'PageDown',
-      'Home',
-      'End',
-      ' '
+      "ArrowUp",
+      "ArrowDown",
+      "PageUp",
+      "PageDown",
+      "Home",
+      "End",
+      " "
     ];
 
     if (scrollKeys.includes(event.key)) {
+
       userTakeControl();
+
     }
 
   }
@@ -374,22 +391,22 @@ window.addEventListener(
 
 
 /* =====================================================
-   MULAI SETELAH "BUKA ♡"
+   MULAI AUTO SCROLL SETELAH BUKA
    ===================================================== */
 
 const startButton =
-  document.getElementById('startBtn');
+  document.getElementById("startBtn");
 
 
 if (startButton) {
 
   startButton.addEventListener(
-    'click',
+    "click",
     () => {
 
       /*
-         Opening diberi waktu untuk tampil
-         sebelum halaman mulai bergerak.
+         Tunggu sebentar setelah opening
+         sebelum mulai bergerak.
       */
 
       setTimeout(() => {
@@ -411,13 +428,13 @@ if (startButton) {
    ===================================================== */
 
 const replayButton =
-  document.getElementById('replayBtn');
+  document.getElementById("replayBtn");
 
 
 if (replayButton) {
 
   replayButton.addEventListener(
-    'click',
+    "click",
     () => {
 
       stopSlowAutoScroll();
@@ -427,14 +444,15 @@ if (replayButton) {
 
       window.scrollTo({
         top: 0,
-        behavior: 'smooth'
+        behavior: "smooth"
       });
 
 
       /*
-         Setelah kembali ke opening,
-         tunggu sebentar lalu mulai lagi.
+         Tunggu sampai kembali ke opening,
+         kemudian mulai auto-scroll lagi.
       */
+
       setTimeout(() => {
 
         startSlowAutoScroll();
@@ -443,5 +461,7 @@ if (replayButton) {
 
     }
   );
+
+}
 
 }
